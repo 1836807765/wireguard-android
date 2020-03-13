@@ -66,7 +66,6 @@ class LogViewerActivity: AppCompatActivity() {
         thread = null
     }
 
-
     private fun startStreamingLog() {
         val builder = ProcessBuilder().command("logcat", "-b", "all", "-v", "threadtime", "*:V")
         builder.environment()["LC_ALL"] = "C"
@@ -76,7 +75,6 @@ class LogViewerActivity: AppCompatActivity() {
             e.printStackTrace()
             return
         }
-        require(process != null) { "process should not be null at this point" }
         stdout = BufferedReader(InputStreamReader(process!!.inputStream, StandardCharsets.UTF_8))
         var line: String
         while(stdout!!.readLine().also { line = it } != null) {
