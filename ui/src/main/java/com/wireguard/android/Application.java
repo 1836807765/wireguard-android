@@ -19,6 +19,9 @@ import com.wireguard.android.backend.Backend;
 import com.wireguard.android.backend.GoBackend;
 import com.wireguard.android.backend.WgQuickBackend;
 import com.wireguard.android.configStore.FileConfigStore;
+import com.wireguard.android.di.AppComponent;
+import com.wireguard.android.di.DaggerAppComponent;
+import com.wireguard.android.di.InjectorProvider;
 import com.wireguard.android.model.TunnelManager;
 import com.wireguard.android.util.AsyncWorker;
 import com.wireguard.android.util.ExceptionLoggers;
@@ -36,7 +39,7 @@ import androidx.preference.PreferenceManager;
 import java9.util.concurrent.CompletableFuture;
 
 @NonNullForAll
-public class Application extends android.app.Application implements SharedPreferences.OnSharedPreferenceChangeListener {
+public class Application extends android.app.Application implements SharedPreferences.OnSharedPreferenceChangeListener, InjectorProvider {
     public static final String USER_AGENT = String.format(Locale.ENGLISH, "WireGuard/%s (Android %d; %s; %s; %s %s; %s)", BuildConfig.VERSION_NAME, Build.VERSION.SDK_INT, Build.SUPPORTED_ABIS.length > 0 ? Build.SUPPORTED_ABIS[0] : "unknown ABI", Build.BOARD, Build.MANUFACTURER, Build.MODEL, Build.FINGERPRINT);
     private static final String TAG = "WireGuard/" + Application.class.getSimpleName();
     @SuppressWarnings("NullableProblems") private static WeakReference<Application> weakSelf;
@@ -137,6 +140,11 @@ public class Application extends android.app.Application implements SharedPrefer
         if (BuildConfig.DEBUG) {
             StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder().detectAll().penaltyLog().build());
         }
+    }
+
+    @Override
+    public AppComponent getComponent() {
+        return DaggerAppComponent.factory().create(getApplicationContext());
     }
 
     @Override

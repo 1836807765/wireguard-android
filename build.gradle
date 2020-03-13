@@ -14,6 +14,7 @@ buildscript {
         coreKtxVersion = '1.2.0'
         constraintLayoutVersion = '1.1.3'
         coordinatorLayoutVersion = '1.1.0'
+        daggerVersion = '2.26'
         agpVersion = '3.6.1'
         fragmentVersion = '1.2.2'
         materialComponentsVersion = '1.1.0'

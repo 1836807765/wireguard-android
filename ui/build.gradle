@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
 
 version wireguardVersionName
 group groupName
@@ -81,10 +82,12 @@ dependencies {
     implementation "androidx.fragment:fragment:$fragmentVersion"
     implementation "androidx.preference:preference:$preferenceVersion"
     implementation "com.google.android.material:material:$materialComponentsVersion"
+    implementation "com.google.dagger:dagger:$daggerVersion"
     implementation "com.journeyapps:zxing-android-embedded:$zxingEmbeddedVersion"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
     implementation "net.sourceforge.streamsupport:android-retrofuture:$streamsupportVersion"
     implementation "net.sourceforge.streamsupport:android-retrostreams:$streamsupportVersion"
+    kapt "com.google.dagger:dagger-compiler:$daggerVersion"
 }
 
 tasks.withType(JavaCompile) {
