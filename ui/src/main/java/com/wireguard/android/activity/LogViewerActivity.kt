@@ -20,14 +20,24 @@ import java.io.IOException
 import java.io.InputStreamReader
 
 import java.nio.charset.StandardCharsets
+import java.text.DateFormat
+import java.text.ParseException
+import java.text.SimpleDateFormat
+import java.util.*
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 
 class LogViewerActivity: AppCompatActivity() {
 
     private lateinit var logAdapter: LogEntryAdapter
-    private var logLines = arrayListOf<String>()
+    private var logLines = arrayListOf<Pair<String, String>>()
     private var process: Process? = null
     private var stdout: BufferedReader? = null
     private var thread: Thread? = null
+    private val year by lazy {
+        val yearFormatter: DateFormat = SimpleDateFormat("yyyy", Locale.US)
+        yearFormatter.format(Date())
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,9 +88,37 @@ class LogViewerActivity: AppCompatActivity() {
         stdout = BufferedReader(InputStreamReader(process!!.inputStream, StandardCharsets.UTF_8))
         var line: String
         while(stdout!!.readLine().also { line = it } != null) {
-            logLines.add(line)
-            runOnUiThread { logAdapter.notifyDataSetChanged() }
+            val logLine = parseLine(line)
+            if (logLine != null) {
+                logLines.add(logLine.time.toString() to logLine.msg)
+                runOnUiThread { logAdapter.notifyDataSetChanged() }
+            }
         }
+    }
+
+    private fun parseTime(timeStr: String): Date? {
+        val formatter: DateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
+        return try {
+            formatter.parse("$year-$timeStr")
+        } catch (e: ParseException) {
+            null
+        }
+    }
+
+    private fun parseLine(line: String): LogLine? {
+        val m: Matcher = THREADTIME_LINE.matcher(line)
+        return if (m.matches()) LogLine(m.group(2).toInt(), m.group(3).toInt(), parseTime(m.group(1)), m.group(4), m.group(5), m.group(6)) else null
+    }
+
+    data class LogLine(val pid: Int, val tid: Int, val time: Date?, val level: String, val tag: String, val msg: String)
+
+    companion object {
+        /**
+         * Match a single line of `logcat -v threadtime`, such as:
+         *
+         * <pre>05-26 11:02:36.886 5689 5689 D AndroidRuntime: CheckJNI is OFF.</pre>
+         */
+        private val THREADTIME_LINE: Pattern = Pattern.compile("^(\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d{3})(?:\\s+[0-9A-Za-z]+)?\\s+(\\d+)\\s+(\\d+)\\s+([A-Z])\\s+(.+?)\\s*: (.*)$")
     }
 
     inner class LogEntryAdapter : RecyclerView.Adapter<LogEntryAdapter.ViewHolder>() {
@@ -96,7 +134,7 @@ class LogViewerActivity: AppCompatActivity() {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             holder.textView.apply {
                 setSingleLine()
-                text = logLines[position]
+                text = logLines[position].first
                 setOnClickListener {
                     isSingleLine = !holder.isSingleLine
                     holder.isSingleLine = !holder.isSingleLine
