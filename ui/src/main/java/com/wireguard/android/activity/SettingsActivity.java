@@ -5,6 +5,7 @@
 
 package com.wireguard.android.activity;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -129,6 +130,11 @@ public class SettingsActivity extends ThemeChangeAwareActivity {
                         screen.removePreference(moduleInstaller);
                 });
             }
+
+            getPreferenceManager().findPreference("log_viewer").setOnPreferenceClickListener(preference -> {
+                startActivity(new Intent(requireContext(), LogViewerActivity.class));
+                return false;
+            });
         }
     }
 }
