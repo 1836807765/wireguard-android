@@ -5,16 +5,25 @@
 
 package com.wireguard.android.activity
 
+import android.content.Context
+import android.graphics.Color
+import android.graphics.Typeface.BOLD
 import android.os.Bundle
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
+import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.MenuItem
+import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.textview.MaterialTextView
 import com.wireguard.android.R
+import com.wireguard.android.util.resolveAttribute
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -30,7 +39,7 @@ import java.util.regex.Pattern
 class LogViewerActivity: AppCompatActivity() {
 
     private lateinit var logAdapter: LogEntryAdapter
-    private var logLines = arrayListOf<Pair<String, String>>()
+    private var logLines = arrayListOf<LogLine>()
     private var process: Process? = null
     private var stdout: BufferedReader? = null
     private var thread: Thread? = null
@@ -90,7 +99,7 @@ class LogViewerActivity: AppCompatActivity() {
         while(stdout!!.readLine().also { line = it } != null) {
             val logLine = parseLine(line)
             if (logLine != null) {
-                logLines.add(logLine.time.toString() to logLine.msg)
+                logLines.add(logLine)
                 runOnUiThread { logAdapter.notifyDataSetChanged() }
             }
         }
@@ -123,25 +132,40 @@ class LogViewerActivity: AppCompatActivity() {
 
     inner class LogEntryAdapter : RecyclerView.Adapter<LogEntryAdapter.ViewHolder>() {
 
-        inner class ViewHolder(val textView: TextView, var isSingleLine: Boolean = true) : RecyclerView.ViewHolder(textView)
+        inner class ViewHolder(val layout: View, var isSingleLine: Boolean = true) : RecyclerView.ViewHolder(layout)
+
+        private fun levelToColor(context: Context, level: String): Int {
+            return when (level) {
+                "E" -> Color.RED
+                "W" -> Color.YELLOW
+                "I" -> Color.GREEN
+                else -> context.resolveAttribute(android.R.attr.textColorPrimary)
+            }
+        }
+        override fun getItemCount() = logLines.size
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val textView = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.log_viewer_entry, parent, false) as TextView
-            return ViewHolder(textView)
+            val view = LayoutInflater.from(parent.context)
+                    .inflate(R.layout.log_viewer_entry, parent, false)
+            return ViewHolder(view)
         }
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            holder.textView.apply {
-                setSingleLine()
-                text = logLines[position].first
-                setOnClickListener {
-                    isSingleLine = !holder.isSingleLine
-                    holder.isSingleLine = !holder.isSingleLine
+            val line = logLines[position]
+            val spannable = SpannableString("${line.tag}: ${line.msg}")
+            spannable.setSpan(StyleSpan(BOLD), 0, "${line.tag}:".length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            spannable.setSpan(ForegroundColorSpan(levelToColor(holder.layout.context, line.level)),0, "${line.tag}:".length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            holder.layout.apply {
+                findViewById<MaterialTextView>(R.id.log_date).text = line.time.toString()
+                findViewById<MaterialTextView>(R.id.log_msg).apply {
+                    setSingleLine()
+                    text = spannable
+                    setOnClickListener {
+                        isSingleLine = !holder.isSingleLine
+                        holder.isSingleLine = !holder.isSingleLine
+                    }
                 }
             }
         }
-
-        override fun getItemCount() = logLines.size
     }
 }
