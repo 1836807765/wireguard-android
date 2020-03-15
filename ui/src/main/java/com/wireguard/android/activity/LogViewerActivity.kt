@@ -152,9 +152,14 @@ class LogViewerActivity: AppCompatActivity() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val line = logLines[position]
-            val spannable = SpannableString("${line.tag}: ${line.msg}")
-            spannable.setSpan(StyleSpan(BOLD), 0, "${line.tag}:".length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-            spannable.setSpan(ForegroundColorSpan(levelToColor(holder.layout.context, line.level)),0, "${line.tag}:".length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            val spannable = if (position > 0 && logLines[position - 1].tag == line.tag)
+                SpannableString(line.msg)
+            else
+                SpannableString("${line.tag}: ${line.msg}").apply {
+                    setSpan(StyleSpan(BOLD), 0, "${line.tag}:".length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    setSpan(ForegroundColorSpan(levelToColor(holder.layout.context, line.level)),
+                            0, "${line.tag}:".length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
             holder.layout.apply {
                 findViewById<MaterialTextView>(R.id.log_date).text = line.time.toString()
                 findViewById<MaterialTextView>(R.id.log_msg).apply {
